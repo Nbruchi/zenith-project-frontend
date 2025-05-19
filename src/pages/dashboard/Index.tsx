@@ -1,32 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVehicles } from "@/hooks/useVehicles";
 import { useParkingSlots } from "@/hooks/useParkingSlots";
 import { useSlotRequests } from "@/hooks/useSlotRequests";
+import { RequestStatus } from "@/types";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { vehicles } = useVehicles(1, 100);
   const { slots } = useParkingSlots(1, 100);
-  const { requests } = useSlotRequests(1, 100);
+  const { requests: allRequests } = useSlotRequests(1, 100);
+  const { requests: pendingRequests } = useSlotRequests(1, 100, "", RequestStatus.PENDING);
   const isAdmin = user?.role === 'ADMIN';
 
-  const [stats, setStats] = useState({
-    totalVehicles: 0,
-    totalSlots: 0,
-    availableSlots: 0,
-    pendingRequests: 0,
-  });
-
-  useEffect(() => {
-    setStats({
-      totalVehicles: vehicles.length,
-      totalSlots: slots.length,
-      availableSlots: slots.filter((slot) => slot.status === "AVAILABLE").length,
-      pendingRequests: requests.filter((req) => req.requestStatus === "PENDING").length,
-    });
-  }, [vehicles, slots, requests]);
+  const stats = useMemo(() => ({
+    totalVehicles: vehicles.length,
+    totalSlots: slots.length,
+    availableSlots: slots.filter((slot) => slot.status === "AVAILABLE").length,
+    pendingRequests: pendingRequests.length,
+  }), [vehicles, slots, pendingRequests]);
 
   return (
     <div className="container mx-auto">

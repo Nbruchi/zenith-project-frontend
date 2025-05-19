@@ -18,16 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ParkingSlot, SlotFormData, VehicleSize, VehicleType } from "@/types";
+import { ParkingSlot, SlotFormData, Size, VehicleType, Location } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useParkingSlots } from "@/hooks/useParkingSlots";
 
 const formSchema = z.object({
   slotNumber: z.string().min(1, "Slot number is required"),
-  size: z.enum(["small", "medium", "large"] as const),
-  vehicleType: z.enum(["car", "motorcycle", "truck"] as const),
-  location: z.enum(["north", "south", "east", "west"] as const),
-}) as z.ZodType<SlotFormData>;
+  size: z.nativeEnum(Size),
+  vehicleType: z.nativeEnum(VehicleType),
+  location: z.nativeEnum(Location),
+});
 
 interface SlotFormProps {
   isOpen: boolean;
@@ -42,24 +42,24 @@ const SlotForm = ({
   slot,
   isEditing = false,
 }: SlotFormProps) => {
-  const { createSlot, updateSlot } = useParkingSlots();
+  const { createParkingSlot, updateParkingSlot } = useParkingSlots();
 
   const form = useForm<SlotFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       slotNumber: slot?.slotNumber || "",
-      size: (slot?.size.toLowerCase() as VehicleSize) || "small",
-      vehicleType: (slot?.vehicleType.toLowerCase() as VehicleType) || "car",
-      location: (slot?.location.toLowerCase() as "north" | "south" | "east" | "west") || "north",
+      size: slot?.size || Size.SMALL,
+      vehicleType: slot?.vehicleType || VehicleType.CAR,
+      location: slot?.location || Location.NORTH,
     },
   });
 
   const onSubmit = async (data: SlotFormData) => {
     try {
       if (isEditing && slot) {
-        await updateSlot.mutateAsync({ id: slot.id, slotData: data });
+        await updateParkingSlot.mutateAsync({ id: slot.id, slotData: data });
       } else {
-        await createSlot.mutateAsync(data);
+        await createParkingSlot.mutateAsync(data);
       }
       onClose();
     } catch (error) {
@@ -106,9 +106,9 @@ const SlotForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="small">Small</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="large">Large</SelectItem>
+                      <SelectItem value={Size.SMALL}>Small</SelectItem>
+                      <SelectItem value={Size.MEDIUM}>Medium</SelectItem>
+                      <SelectItem value={Size.LARGE}>Large</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -131,9 +131,9 @@ const SlotForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="car">Car</SelectItem>
-                      <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                      <SelectItem value="truck">Truck</SelectItem>
+                      <SelectItem value={VehicleType.CAR}>Car</SelectItem>
+                      <SelectItem value={VehicleType.MOTORCYCLE}>Motorcycle</SelectItem>
+                      <SelectItem value={VehicleType.TRUCK}>Truck</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -156,10 +156,10 @@ const SlotForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="north">North</SelectItem>
-                      <SelectItem value="south">South</SelectItem>
-                      <SelectItem value="east">East</SelectItem>
-                      <SelectItem value="west">West</SelectItem>
+                      <SelectItem value={Location.NORTH}>North</SelectItem>
+                      <SelectItem value={Location.SOUTH}>South</SelectItem>
+                      <SelectItem value={Location.EAST}>East</SelectItem>
+                      <SelectItem value={Location.WEST}>West</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -172,9 +172,9 @@ const SlotForm = ({
               </Button>
               <Button 
                 type="submit" 
-                disabled={createSlot.isPending || updateSlot.isPending}
+                disabled={createParkingSlot.isPending || updateParkingSlot.isPending}
               >
-                {createSlot.isPending || updateSlot.isPending
+                {createParkingSlot.isPending || updateParkingSlot.isPending
                   ? isEditing
                     ? "Updating..."
                     : "Creating..."

@@ -7,9 +7,18 @@ const axiosInstance = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
+    withCredentials: true
 });
 
-// Add a request interceptor to add the auth token to every request
+// Utility function to handle API response structure
+export const handleApiResponse = (response: any) => {
+    if (response.data && response.data.data) {
+        return response.data.data;
+    }
+    return response.data;
+};
+
+// Request interceptor
 axiosInstance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem("token");
@@ -23,33 +32,20 @@ axiosInstance.interceptors.request.use(
     }
 );
 
-// Add a response interceptor to handle token expiration and refresh
+// Response interceptor
 axiosInstance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        return response;
+    },
     async (error) => {
-        const originalRequest = error.config;
-
         // If token expired (401 error)
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            try {
-                // Try to get a new token
-                const response = await axiosInstance.get("/auth/refresh-token");
-                const { token } = response.data.data;
-
-                // Update storage and headers
-                localStorage.setItem("token", token);
-                axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-                // Retry the original request
-                return axiosInstance(originalRequest);
-            } catch (refreshError) {
-                // If refresh fails, logout
+        if (error.response?.status === 401) {
+            const currentPath = window.location.pathname;
+            // Only remove token and redirect if we're not in a protected route
+            if (!currentPath.startsWith('/dashboard') && !currentPath.includes('/login')) {
                 localStorage.removeItem("token");
-                delete axiosInstance.defaults.headers.common["Authorization"];
+                localStorage.removeItem("user");
                 window.location.href = "/login";
-                return Promise.reject(refreshError);
             }
         }
 

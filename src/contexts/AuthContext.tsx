@@ -20,7 +20,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     // Initialize user state from localStorage if available
     const storedUser = localStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
+    const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+    console.log('Initial user from localStorage:', parsedUser);
+    return parsedUser;
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await axiosInstance.get('/auth/me');
       const userData = response.data.data;
+      console.log('Fetched user data:', userData);
       setUser(userData);
       // Store user data in localStorage as a fallback
       localStorage.setItem('user', JSON.stringify(userData));

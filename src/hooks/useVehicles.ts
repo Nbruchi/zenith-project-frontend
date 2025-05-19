@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from '@/lib/axios';
+import axiosInstance, { handleApiResponse } from '@/lib/axios';
 import { Vehicle, VehicleFormData } from '@/types';
 import { toast } from 'sonner';
 
@@ -9,10 +9,10 @@ export function useVehicles(page = 1, limit = 10, search = "") {
   const { data, isLoading, error } = useQuery({
     queryKey: ["vehicles", page, limit, search],
     queryFn: async () => {
-      const { data } = await axiosInstance.get("/vehicles", {
+      const response = await axiosInstance.get("/vehicles", {
         params: { page, limit, search },
       });
-      return data;
+      return handleApiResponse(response);
     },
   });
 
@@ -28,7 +28,7 @@ export function useVehicles(page = 1, limit = 10, search = "") {
         }
       };
       const response = await axiosInstance.post('/vehicles', payload);
-      return response.data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -54,7 +54,7 @@ export function useVehicles(page = 1, limit = 10, search = "") {
         }
       };
       const response = await axiosInstance.patch(`/vehicles/${id}`, payload);
-      return response.data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -71,7 +71,7 @@ export function useVehicles(page = 1, limit = 10, search = "") {
   const deleteVehicle = useMutation({
     mutationFn: async (id: string) => {
       const response = await axiosInstance.delete(`/vehicles/${id}`);
-      return response.data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -88,7 +88,7 @@ export function useVehicles(page = 1, limit = 10, search = "") {
   const createSlotRequest = useMutation({
     mutationFn: async (vehicleId: string) => {
       const response = await axiosInstance.post('/slot-requests', { vehicleId });
-      return response.data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['slotRequests'] });

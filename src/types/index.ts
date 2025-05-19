@@ -4,6 +4,8 @@ export interface User {
   name: string;
   email: string;
   role: 'USER' | 'ADMIN';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthState {
@@ -15,20 +17,20 @@ export interface AuthState {
 }
 
 // Vehicle types
-export type VehicleSize = 'SMALL' | 'MEDIUM' | 'LARGE';
-export type VehicleType = 'CAR' | 'MOTORCYCLE' | 'TRUCK';
-
 export interface Vehicle {
   id: string;
   userId: string;
   plateNumber: string;
   vehicleType: VehicleType;
-  size: VehicleSize;
-  attributes: {
+  size: Size;
+  isParked: boolean;
+  parkingSlotId?: string;
+  attributes?: {
     color?: string;
     model?: string;
     [key: string]: any;
   };
+  User?: User;
 }
 
 export interface VehiclesState {
@@ -42,10 +44,17 @@ export interface VehiclesState {
 export interface ParkingSlot {
   id: string;
   slotNumber: string;
-  size: VehicleSize;
+  size: Size;
   vehicleType: VehicleType;
-  status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'MAINTENANCE';
-  location: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+  location: Location;
+  status: SlotStatus;
+  createdAt: string;
+  updatedAt: string;
+  assignedTo?: {
+    userId: string;
+    vehicleId: string;
+    vehiclePlate: string;
+  };
 }
 
 export interface ParkingSlotsState {
@@ -56,18 +65,25 @@ export interface ParkingSlotsState {
 }
 
 // Slot request types
-export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
-
 export interface SlotRequest {
   id: string;
   userId: string;
+  userName: string;
   vehicleId: string;
-  slotId?: string;
-  requestStatus: RequestStatus;
+  vehiclePlate: string;
+  vehicleType: string;
+  preferredLocation?: Location;
+  startDate?: string;
+  endDate?: string;
+  status: RequestStatus;
+  notes?: string;
+  rejectionReason?: string;
   createdAt: string;
   updatedAt: string;
-  slotNumber?: string;
-  vehicle?: Vehicle;
+  assignedSlot?: {
+    id: string;
+    slotNumber: string;
+  };
 }
 
 export interface SlotRequestsState {
@@ -122,29 +138,77 @@ export interface RegisterFormData {
   confirmPassword: string;
 }
 
+export interface UpdateProfileDto {
+  name: string;
+  email: string;
+}
+
+export interface UpdatePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface VehicleFormData {
   plateNumber: string;
   vehicleType: VehicleType;
-  size: VehicleSize;
-  color?: string;
-  model?: string;
+  size: Size;
+  color: string;
+  model: string;
 }
 
 export interface SlotFormData {
   slotNumber: string;
-  size: VehicleSize;
+  size: Size;
   vehicleType: VehicleType;
-  location: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+  location: Location;
 }
 
 export interface SlotRequestFormData {
   vehicleId: string;
+  userId: string;
+  preferredLocation?: Location;
+  startDate?: string;
+  endDate?: string;
+  notes?: string;
 }
 
 export interface BulkSlotCreationFormData {
   startNumber: number;
   count: number;
-  size: VehicleSize;
+  prefix: string;
+  size: Size;
   vehicleType: VehicleType;
-  location: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+  location: Location;
+}
+
+export enum VehicleType {
+  CAR = 'CAR',
+  MOTORCYCLE = 'MOTORCYCLE',
+  TRUCK = 'TRUCK'
+}
+
+export enum Size {
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE'
+}
+
+export enum SlotStatus {
+  AVAILABLE = 'AVAILABLE',
+  OCCUPIED = 'OCCUPIED',
+  RESERVED = 'RESERVED',
+  MAINTENANCE = 'MAINTENANCE'
+}
+
+export enum RequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+export enum Location {
+  NORTH = 'NORTH',
+  SOUTH = 'SOUTH',
+  EAST = 'EAST',
+  WEST = 'WEST'
 }

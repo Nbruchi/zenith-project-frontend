@@ -3,7 +3,16 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Vehicle } from "@/types"
 import { Button } from "@/components/ui/button"
-import { ArrowUpDown } from "lucide-react"
+import { ArrowUpDown, ParkingCircle } from "lucide-react"
+import { useVehicles } from "@/hooks/useVehicles"
+import { useState } from "react"
+import { SlotRequestForm } from "@/components/features/slot-requests/SlotRequestForm"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export const columns: ColumnDef<Vehicle>[] = [
   {
@@ -56,6 +65,40 @@ export const columns: ColumnDef<Vehicle>[] = [
     cell: ({ row }) => {
       const parkingSlotId = row.getValue("parkingSlotId") as string
       return <div>{parkingSlotId || "Not Assigned"}</div>
+    },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => {
+      const vehicle = row.original
+      const [showRequestForm, setShowRequestForm] = useState(false)
+
+      return (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowRequestForm(true)}
+            disabled={vehicle.isParked}
+          >
+            <ParkingCircle className="mr-2 h-4 w-4" />
+            Request Slot
+          </Button>
+
+          <Dialog open={showRequestForm} onOpenChange={setShowRequestForm}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Request Parking Slot</DialogTitle>
+              </DialogHeader>
+              <SlotRequestForm
+                vehicleId={vehicle.id}
+                onSuccess={() => setShowRequestForm(false)}
+                onCancel={() => setShowRequestForm(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
+      )
     },
   },
 ]

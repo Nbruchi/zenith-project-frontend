@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SlotRequest } from "@/types";
+import { SlotRequest, RequestStatus } from "@/types";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -14,25 +14,42 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useSlotRequests } from "@/hooks/useSlotRequests";
 import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
+import { User, Car, ParkingSquare } from "lucide-react";
 
 interface RequestCardProps {
   request: SlotRequest;
+  onApprove: (requestId: string) => void;
+  onReject: (requestId: string) => void;
 }
 
-const RequestCard = ({ request }: RequestCardProps) => {
+export function RequestCard({ request, onApprove, onReject }: RequestCardProps) {
   const { user } = useAuth();
-  const { deleteRequest, approveRequest, rejectRequest } = useSlotRequests();
+  const { deleteSlotRequest, approveSlotRequest, rejectSlotRequest } = useSlotRequests();
   const isAdmin = user?.role === "ADMIN";
   
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  console.log('User:', user);
+  console.log('Is Admin:', isAdmin);
+  console.log('Request Status:', request.status);
 
-  const vehicle = request.vehicle;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const handleDelete = async () => {
     try {
-      await deleteRequest.mutateAsync(request.id);
+      await deleteSlotRequest.mutateAsync(request.id);
       setShowDeleteConfirm(false);
     } catch (error) {
       // Error is handled in the mutation
@@ -41,35 +58,45 @@ const RequestCard = ({ request }: RequestCardProps) => {
 
   const handleApprove = async () => {
     try {
-      await approveRequest.mutateAsync(request.id);
+      await approveSlotRequest.mutateAsync({ id: request.id });
     } catch (error) {
       // Error is handled in the mutation
     }
   };
 
   const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+
     try {
-      await rejectRequest.mutateAsync(request.id);
+      await rejectSlotRequest.mutateAsync({
+        id: request.id,
+        rejectionReason: rejectionReason.trim(),
+      });
+      setShowRejectDialog(false);
+      setRejectionReason("");
     } catch (error) {
       // Error is handled in the mutation
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: RequestStatus) => {
     switch (status) {
-      case "approved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
-      case "pending":
+      case "PENDING":
         return "bg-yellow-100 text-yellow-800";
+      case "APPROVED":
+        return "bg-green-100 text-green-800";
+      case "REJECTED":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return format(new Date(dateString), "PPpp");
   };
 
   return (
@@ -78,30 +105,66 @@ const RequestCard = ({ request }: RequestCardProps) => {
         <CardHeader>
           <div className="flex justify-between items-start">
             <CardTitle className="text-lg">Request #{request.id.slice(0, 8)}</CardTitle>
-            <Badge className={getStatusColor(request.requestStatus)}>
-              {request.requestStatus}
+            <Badge className={getStatusColor(request.status)}>
+              {request.status}
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="flex-1">
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Vehicle Info</p>
-              <p className="font-medium">{vehicle?.plateNumber || "N/A"}</p>
-              <div className="flex gap-1 mt-1">
-                {vehicle?.vehicleType && (
-                  <Badge variant="outline">{vehicle.vehicleType}</Badge>
-                )}
-                {vehicle?.size && (
-                  <Badge variant="outline">{vehicle.size}</Badge>
-                )}
-              </div>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {request.userName}
+              </span>
             </div>
+            <div className="flex items-center gap-2">
+              <Car className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {request.vehiclePlate} ({request.vehicleType})
+              </span>
+            </div>
+            {request.assignedSlot && (
+              <div className="flex items-center gap-2">
+                <ParkingSquare className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  Assigned to Slot {request.assignedSlot.slotNumber}
+                </span>
+              </div>
+            )}
 
-            {request.slotNumber && (
+            {request.preferredLocation && (
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Assigned Slot</p>
-                <p className="font-medium">{request.slotNumber}</p>
+                <p className="text-sm font-medium text-muted-foreground">Preferred Location</p>
+                <p className="font-medium">{request.preferredLocation}</p>
+              </div>
+            )}
+
+            {request.startDate && request.endDate && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Duration</p>
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    {format(new Date(request.startDate), "MMM d, yyyy")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    to {format(new Date(request.endDate), "MMM d, yyyy")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {request.notes && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Notes</p>
+                <p className="text-sm">{request.notes}</p>
+              </div>
+            )}
+
+            {request.rejectionReason && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Rejection Reason</p>
+                <p className="text-sm text-red-600">{request.rejectionReason}</p>
               </div>
             )}
 
@@ -118,49 +181,33 @@ const RequestCard = ({ request }: RequestCardProps) => {
             )}
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-4">
-          <div className="flex w-full justify-between">
-            {request.requestStatus === "pending" && (
-              <>
-                {isAdmin ? (
-                  <div className="flex gap-2 w-full">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                      onClick={handleApprove}
-                      disabled={approveRequest.isPending}
-                    >
-                      {approveRequest.isPending ? "Processing..." : "Approve"}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={handleReject}
-                      disabled={rejectRequest.isPending}
-                    >
-                      {rejectRequest.isPending ? "Processing..." : "Reject"}
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    disabled={deleteRequest.isPending}
-                  >
-                    Cancel Request
-                  </Button>
-                )}
-              </>
-            )}
-            {!isAdmin && request.requestStatus !== "pending" && (
-              <p className="text-sm text-muted-foreground italic">
-                Request {request.requestStatus} on {formatDate(request.updatedAt)}
-              </p>
-            )}
-          </div>
+        <CardFooter className="flex justify-end gap-2">
+          {isAdmin && request.status === "PENDING" && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowRejectDialog(true)}
+                disabled={deleteSlotRequest.isPending}
+              >
+                Reject
+              </Button>
+              <Button
+                onClick={() => onApprove(request.id)}
+                disabled={approveSlotRequest.isPending}
+              >
+                Approve
+              </Button>
+            </>
+          )}
+          {(!isAdmin || request.status === "PENDING") && (
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleteSlotRequest.isPending}
+            >
+              Delete
+            </Button>
+          )}
         </CardFooter>
       </Card>
 
@@ -178,8 +225,33 @@ const RequestCard = ({ request }: RequestCardProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Slot Request</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this slot request.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Enter rejection reason..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReject} disabled={!rejectionReason.trim()}>
+              Reject Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
-};
-
-export default RequestCard;
+}

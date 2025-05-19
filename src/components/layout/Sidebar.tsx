@@ -7,6 +7,7 @@ import {
   Settings,
   Users,
   Home,
+  User,
 } from "lucide-react";
 
 type SidebarProps = React.HTMLAttributes<HTMLDivElement>
@@ -64,7 +65,7 @@ const Sidebar = ({ className }: SidebarProps) => {
               }
             >
               <Calendar className="h-4 w-4" />
-              <span>Slot Requests</span>
+              <span>My Requests</span>
             </NavLink>
             {isAdmin && (
               <>
@@ -101,6 +102,20 @@ const Sidebar = ({ className }: SidebarProps) => {
                 </NavLink>
               </>
             )}
+            <NavLink
+              to="/dashboard/profile"
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all hover:bg-sidebar-accent",
+                  isActive
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground"
+                )
+              }
+            >
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </NavLink>
           </div>
         </div>
       </div>

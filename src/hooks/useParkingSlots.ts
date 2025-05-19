@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axiosInstance from '@/lib/axios';
+import axiosInstance, { handleApiResponse } from '@/lib/axios';
 import { ParkingSlot, SlotFormData, BulkSlotCreationFormData } from '@/types';
 import { toast } from 'sonner';
 
@@ -7,24 +7,19 @@ export function useParkingSlots(page = 1, limit = 10, search = "") {
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["parking-slots", page, limit, search],
+    queryKey: ["parkingSlots", page, limit, search],
     queryFn: async () => {
-      const { data } = await axiosInstance.get("/parking-slots", {
-        params: { page, limit, search },
+      const response = await axiosInstance.get("/parking-slots", {
+        params: { page, limit, search, include: "vehicle" },
       });
-      return data;
+      return handleApiResponse(response);
     },
   });
 
-  const createSlot = useMutation({
-    mutationFn: async (slotData: SlotFormData) => {
-      const response = await axiosInstance.post('/parking-slots', {
-        ...slotData,
-        vehicleType: slotData.vehicleType.toUpperCase(),
-        size: slotData.size.toUpperCase(),
-        location: slotData.location.toUpperCase()
-      });
-      return response.data;
+  const createParkingSlot = useMutation({
+    mutationFn: async (slotData: Partial<ParkingSlot>) => {
+      const response = await axiosInstance.post('/parking-slots', slotData);
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parkingSlots'] });
@@ -43,7 +38,7 @@ export function useParkingSlots(page = 1, limit = 10, search = "") {
         size: data.size.toUpperCase(),
         location: data.location.toUpperCase()
       });
-      return response.data;
+      return handleApiResponse(response);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['parkingSlots'] });
@@ -54,15 +49,10 @@ export function useParkingSlots(page = 1, limit = 10, search = "") {
     }
   });
 
-  const updateSlot = useMutation({
-    mutationFn: async ({ id, slotData }: { id: string; slotData: SlotFormData }) => {
-      const response = await axiosInstance.patch(`/parking-slots/${id}`, {
-        ...slotData,
-        vehicleType: slotData.vehicleType.toUpperCase(),
-        size: slotData.size.toUpperCase(),
-        location: slotData.location.toUpperCase()
-      });
-      return response.data;
+  const updateParkingSlot = useMutation({
+    mutationFn: async ({ id, slotData }: { id: string; slotData: Partial<ParkingSlot> }) => {
+      const response = await axiosInstance.put(`/parking-slots/${id}`, slotData);
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parkingSlots'] });
@@ -73,10 +63,10 @@ export function useParkingSlots(page = 1, limit = 10, search = "") {
     }
   });
 
-  const deleteSlot = useMutation({
+  const deleteParkingSlot = useMutation({
     mutationFn: async (id: string) => {
       const response = await axiosInstance.delete(`/parking-slots/${id}`);
-      return response.data;
+      return handleApiResponse(response);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['parkingSlots'] });
@@ -97,9 +87,9 @@ export function useParkingSlots(page = 1, limit = 10, search = "") {
     },
     isLoading,
     error,
-    createSlot,
+    createParkingSlot,
     createBulkSlots,
-    updateSlot,
-    deleteSlot
+    updateParkingSlot,
+    deleteParkingSlot
   };
 } 

@@ -13,6 +13,7 @@ import Dashboard from "./pages/dashboard/Index";
 import Vehicles from "./pages/dashboard/Vehicles";
 import Requests from "./pages/dashboard/Requests";
 import ManageSlots from "./pages/dashboard/ManageSlots";
+import { ProfilePage } from "./pages/ProfilePage";
 
 // Layouts
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="vehicles" element={<Vehicles />} />
               <Route path="requests" element={<Requests />} />
               <Route path="manage-slots" element={<ManageSlots />} />
+              <Route path="profile" element={<ProfilePage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

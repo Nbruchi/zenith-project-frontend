@@ -19,17 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BulkSlotCreationFormData, VehicleSize, VehicleType } from "@/types";
+import { BulkSlotCreationFormData, Size, VehicleType, Location } from "@/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useParkingSlots } from "@/hooks/useParkingSlots";
 
 const formSchema = z.object({
   startNumber: z.coerce.number().min(1, "Start number must be at least 1"),
   count: z.coerce.number().min(1, "Count must be at least 1").max(500, "Cannot create more than 500 slots at once"),
-  size: z.enum(["small", "medium", "large"] as const),
-  vehicleType: z.enum(["car", "motorcycle", "truck"] as const),
-  location: z.enum(["north", "south", "east", "west"] as const),
-}) as z.ZodType<BulkSlotCreationFormData>;
+  prefix: z.string().min(1, "Prefix is required"),
+  size: z.nativeEnum(Size),
+  vehicleType: z.nativeEnum(VehicleType),
+  location: z.nativeEnum(Location),
+});
 
 interface BulkSlotFormProps {
   isOpen: boolean;
@@ -47,9 +48,10 @@ const BulkSlotForm = ({
     defaultValues: {
       startNumber: 1,
       count: 10,
-      size: "small",
-      vehicleType: "car",
-      location: "north",
+      prefix: "SLOT",
+      size: Size.SMALL,
+      vehicleType: VehicleType.CAR,
+      location: Location.NORTH,
     },
   });
 
@@ -72,16 +74,29 @@ const BulkSlotForm = ({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
+              name="prefix"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prefix</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g., SLOT" />
+                  </FormControl>
+                  <FormDescription>
+                    This will be used as a prefix for the slot numbers
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="startNumber"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Start Number</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="1" {...field} />
+                    <Input type="number" min={1} {...field} />
                   </FormControl>
-                  <FormDescription>
-                    The starting slot number (e.g., 1 for "A-001")
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -91,13 +106,10 @@ const BulkSlotForm = ({
               name="count"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Count</FormLabel>
+                  <FormLabel>Number of Slots</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="10" {...field} />
+                    <Input type="number" min={1} max={500} {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Number of slots to create (max 500)
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -114,13 +126,13 @@ const BulkSlotForm = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select slot size" />
+                        <SelectValue placeholder="Select size" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="small">Small</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="large">Large</SelectItem>
+                      <SelectItem value={Size.SMALL}>Small</SelectItem>
+                      <SelectItem value={Size.MEDIUM}>Medium</SelectItem>
+                      <SelectItem value={Size.LARGE}>Large</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -143,9 +155,9 @@ const BulkSlotForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="car">Car</SelectItem>
-                      <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                      <SelectItem value="truck">Truck</SelectItem>
+                      <SelectItem value={VehicleType.CAR}>Car</SelectItem>
+                      <SelectItem value={VehicleType.MOTORCYCLE}>Motorcycle</SelectItem>
+                      <SelectItem value={VehicleType.TRUCK}>Truck</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -168,10 +180,10 @@ const BulkSlotForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="north">North</SelectItem>
-                      <SelectItem value="south">South</SelectItem>
-                      <SelectItem value="east">East</SelectItem>
-                      <SelectItem value="west">West</SelectItem>
+                      <SelectItem value={Location.NORTH}>North</SelectItem>
+                      <SelectItem value={Location.SOUTH}>South</SelectItem>
+                      <SelectItem value={Location.EAST}>East</SelectItem>
+                      <SelectItem value={Location.WEST}>West</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

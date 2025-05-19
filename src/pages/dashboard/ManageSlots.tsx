@@ -87,16 +87,21 @@ const ManageSlots = () => {
         </div>
       ) : slots.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
             {slots.map((slot) => (
               <SlotCard key={slot.id} slot={slot} onEdit={handleEditSlot} />
             ))}
           </div>
-          <PaginationControls
-            currentPage={page}
-            totalPages={pagination.totalPages}
-            onPageChange={setPage}
-          />
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} slots
+            </p>
+            <PaginationControls
+              currentPage={page}
+              totalPages={pagination.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
         </>
       ) : (
         <div className="text-center py-12 bg-muted/20 rounded-lg">
