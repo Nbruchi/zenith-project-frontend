@@ -25,6 +25,7 @@ export interface Vehicle {
   size: Size;
   isParked: boolean;
   parkingSlotId?: string;
+  parkingSlotNumber?: string;
   attributes?: {
     color?: string;
     model?: string;
@@ -73,8 +74,8 @@ export interface SlotRequest {
   vehiclePlate: string;
   vehicleType: string;
   preferredLocation?: Location;
-  startDate?: string;
-  endDate?: string;
+  startTime?: string;
+  endTime?: string;
   status: RequestStatus;
   notes?: string;
   rejectionReason?: string;
@@ -167,8 +168,8 @@ export interface SlotRequestFormData {
   vehicleId: string;
   userId: string;
   preferredLocation?: Location;
-  startDate?: string;
-  endDate?: string;
+  startTime?: string;
+  endTime?: string;
   notes?: string;
 }
 

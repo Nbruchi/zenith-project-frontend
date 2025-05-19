@@ -65,8 +65,11 @@ export function useSlotRequests(page = 1, limit = 10, search = "", status?: Requ
   });
 
   const approveSlotRequest = useMutation({
-    mutationFn: async ({ id, slotId }: { id: string; slotId?: string }) => {
-      const response = await axiosInstance.patch(`/slot-requests/${id}/approve`, { slotId });
+    mutationFn: async ({ id, slotId }: { id: string; slotId: string }) => {
+      if (!slotId) {
+        throw new Error('Slot ID is required for approval');
+      }
+      const response = await axiosInstance.put(`/slot-requests/${id}/approve`, { slotId });
       return handleApiResponse(response);
     },
     onSuccess: () => {
@@ -80,7 +83,7 @@ export function useSlotRequests(page = 1, limit = 10, search = "", status?: Requ
 
   const rejectSlotRequest = useMutation({
     mutationFn: async ({ id, rejectionReason }: { id: string; rejectionReason: string }) => {
-      const response = await axiosInstance.patch(`/slot-requests/${id}/reject`, { rejectionReason });
+      const response = await axiosInstance.put(`/slot-requests/${id}/reject`, { rejectionReason });
       return handleApiResponse(response);
     },
     onSuccess: () => {

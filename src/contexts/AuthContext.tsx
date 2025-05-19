@@ -18,18 +18,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    // Initialize user state from localStorage if available
-    const storedUser = localStorage.getItem('user');
+    const storedUser = sessionStorage.getItem('user');
     const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-    console.log('Initial user from localStorage:', parsedUser);
     return parsedUser;
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       fetchCurrentUser();
     } else {
@@ -41,16 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await axiosInstance.get('/auth/me');
       const userData = response.data.data;
-      console.log('Fetched user data:', userData);
       setUser(userData);
-      // Store user data in localStorage as a fallback
-      localStorage.setItem('user', JSON.stringify(userData));
+      sessionStorage.setItem('user', JSON.stringify(userData));
       setIsLoading(false);
     } catch (error: any) {
-      // If we get a 401, the token is invalid
       if (error?.response?.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         setUser(null);
         toast.error('Session expired. Please login again.');
       } else {
@@ -67,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await axiosInstance.post('/auth/login', data);
       const { token, user } = response.data.data;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       toast.success('Login successful');
     } catch (error: any) {
@@ -86,8 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await axiosInstance.post('/auth/register', data);
       const { token, user } = response.data.data;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('user', JSON.stringify(user));
       setUser(user);
       toast.success('Registration successful');
     } catch (error: any) {
@@ -100,8 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
     toast.success('Logged out successfully');
   };

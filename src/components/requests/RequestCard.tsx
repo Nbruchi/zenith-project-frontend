@@ -31,18 +31,15 @@ import { User, Car, ParkingSquare } from "lucide-react";
 interface RequestCardProps {
   request: SlotRequest;
   onApprove: (requestId: string) => void;
-  onReject: (requestId: string) => void;
+  onReject: (requestId: string, reason: string) => void;
 }
 
 export function RequestCard({ request, onApprove, onReject }: RequestCardProps) {
   const { user } = useAuth();
-  const { deleteSlotRequest, approveSlotRequest, rejectSlotRequest } = useSlotRequests();
+  const { deleteSlotRequest } = useSlotRequests();
   const isAdmin = user?.role === "ADMIN";
+  const normalizedStatus = request.status.toUpperCase() as RequestStatus;
   
-  console.log('User:', user);
-  console.log('Is Admin:', isAdmin);
-  console.log('Request Status:', request.status);
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -56,30 +53,16 @@ export function RequestCard({ request, onApprove, onReject }: RequestCardProps) 
     }
   };
 
-  const handleApprove = async () => {
-    try {
-      await approveSlotRequest.mutateAsync({ id: request.id });
-    } catch (error) {
-      // Error is handled in the mutation
-    }
-  };
-
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
       toast.error("Please provide a reason for rejection");
       return;
+    
     }
 
-    try {
-      await rejectSlotRequest.mutateAsync({
-        id: request.id,
-        rejectionReason: rejectionReason.trim(),
-      });
-      setShowRejectDialog(false);
-      setRejectionReason("");
-    } catch (error) {
-      // Error is handled in the mutation
-    }
+    onReject(request.id, rejectionReason.trim());
+    setShowRejectDialog(false);
+    setRejectionReason("");
   };
 
   const getStatusColor = (status: RequestStatus) => {
@@ -105,8 +88,8 @@ export function RequestCard({ request, onApprove, onReject }: RequestCardProps) 
         <CardHeader>
           <div className="flex justify-between items-start">
             <CardTitle className="text-lg">Request #{request.id.slice(0, 8)}</CardTitle>
-            <Badge className={getStatusColor(request.status)}>
-              {request.status}
+            <Badge className={getStatusColor(normalizedStatus)}>
+              {normalizedStatus}
             </Badge>
           </div>
         </CardHeader>
@@ -181,29 +164,32 @@ export function RequestCard({ request, onApprove, onReject }: RequestCardProps) 
             )}
           </div>
         </CardContent>
-        <CardFooter className="flex justify-end gap-2">
-          {isAdmin && request.status === "PENDING" && (
+        <CardFooter className="flex flex-wrap justify-end gap-2 pt-4">
+          {isAdmin && normalizedStatus === "PENDING" && (
             <>
               <Button
                 variant="outline"
                 onClick={() => setShowRejectDialog(true)}
                 disabled={deleteSlotRequest.isPending}
+                className="flex-1 sm:flex-none"
               >
                 Reject
               </Button>
               <Button
                 onClick={() => onApprove(request.id)}
-                disabled={approveSlotRequest.isPending}
+                disabled={deleteSlotRequest.isPending}
+                className="flex-1 sm:flex-none"
               >
                 Approve
               </Button>
             </>
           )}
-          {(!isAdmin || request.status === "PENDING") && (
+          {(!isAdmin || normalizedStatus === "PENDING") && (
             <Button
               variant="destructive"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={deleteSlotRequest.isPending}
+              className="flex-1 sm:flex-none"
             >
               Delete
             </Button>

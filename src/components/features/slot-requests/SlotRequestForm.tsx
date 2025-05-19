@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,8 +28,14 @@ const formSchema = z.object({
   preferredLocation: z.nativeEnum(Location, {
     required_error: "Please select a preferred location",
   }),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  startTime: z.string().optional().refine((val) => {
+    if (!val) return true;
+    return !isNaN(Date.parse(`2000-01-01T${val}`));
+  }, "Invalid time format"),
+  endTime: z.string().optional().refine((val) => {
+    if (!val) return true;
+    return !isNaN(Date.parse(`2000-01-01T${val}`));
+  }, "Invalid time format"),
   notes: z.string().optional(),
 });
 
@@ -41,8 +47,27 @@ interface SlotRequestFormProps {
   onCancel?: () => void;
 }
 
+const PARKING_RATE_PER_30MIN = 500; // 500 RWF per 30 minutes
+
+function calculateParkingCost(startTime: string, endTime: string): { duration: string; cost: number } {
+  if (!startTime || !endTime) return { duration: "0h 0m", cost: 0 };
+  
+  const start = new Date(`2000-01-01T${startTime}`);
+  const end = new Date(`2000-01-01T${endTime}`);
+  const diffInMinutes = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60));
+  const halfHourBlocks = Math.ceil(diffInMinutes / 30);
+  const cost = halfHourBlocks * PARKING_RATE_PER_30MIN;
+  
+  const hours = Math.floor(diffInMinutes / 60);
+  const minutes = diffInMinutes % 60;
+  const duration = `${hours}h ${minutes}m`;
+  
+  return { duration, cost };
+}
+
 export function SlotRequestForm({ vehicleId, onSuccess, onCancel }: SlotRequestFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [parkingCost, setParkingCost] = useState<{ duration: string; cost: number }>({ duration: "0h 0m", cost: 0 });
   const { createSlotRequest } = useSlotRequests();
   const { user } = useAuth();
 
@@ -50,11 +75,18 @@ export function SlotRequestForm({ vehicleId, onSuccess, onCancel }: SlotRequestF
     resolver: zodResolver(formSchema),
     defaultValues: {
       preferredLocation: undefined,
-      startDate: "",
-      endDate: "",
+      startTime: "",
+      endTime: "",
       notes: "",
     },
   });
+
+  // Add effect to calculate cost when times change
+  useEffect(() => {
+    const startTime = form.watch("startTime");
+    const endTime = form.watch("endTime");
+    setParkingCost(calculateParkingCost(startTime || "", endTime || ""));
+  }, [form.watch("startTime"), form.watch("endTime")]);
 
   const onSubmit = async (data: FormData) => {
     if (!user?.id) {
@@ -64,10 +96,17 @@ export function SlotRequestForm({ vehicleId, onSuccess, onCancel }: SlotRequestF
 
     try {
       setIsSubmitting(true);
+      // Convert empty strings to undefined for dates
+      const formattedData = {
+        ...data,
+        startTime: data.startTime || undefined,
+        endTime: data.endTime || undefined,
+      };
+      
       await createSlotRequest.mutateAsync({
         vehicleId,
         userId: user.id,
-        ...data,
+        ...formattedData,
       });
       toast.success("Slot request submitted successfully");
       onSuccess?.();
@@ -112,13 +151,13 @@ export function SlotRequestForm({ vehicleId, onSuccess, onCancel }: SlotRequestF
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="startDate"
+            name="startTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date (Optional)</FormLabel>
+                <FormLabel>Start Time (Optional)</FormLabel>
                 <FormControl>
                   <input
-                    type="date"
+                    type="time"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     {...field}
                     value={field.value || ""}
@@ -131,13 +170,13 @@ export function SlotRequestForm({ vehicleId, onSuccess, onCancel }: SlotRequestF
 
           <FormField
             control={form.control}
-            name="endDate"
+            name="endTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>End Date (Optional)</FormLabel>
+                <FormLabel>End Time (Optional)</FormLabel>
                 <FormControl>
                   <input
-                    type="date"
+                    type="time"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     {...field}
                     value={field.value || ""}
@@ -148,6 +187,15 @@ export function SlotRequestForm({ vehicleId, onSuccess, onCancel }: SlotRequestF
             )}
           />
         </div>
+
+        {(form.watch("startTime") || form.watch("endTime")) && (
+          <div className="rounded-lg border p-4 bg-muted/50">
+            <p className="text-sm font-medium">Estimated Parking Details:</p>
+            <p className="text-sm">Duration: {parkingCost.duration}</p>
+            <p className="text-sm font-semibold">Cost: {parkingCost.cost} RWF</p>
+            <p className="text-xs text-muted-foreground mt-1">Rate: 500 RWF per 30 minutes</p>
+          </div>
+        )}
 
         <FormField
           control={form.control}

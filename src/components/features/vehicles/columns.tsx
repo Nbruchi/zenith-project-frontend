@@ -54,7 +54,7 @@ export const columns: ColumnDef<Vehicle>[] = [
       const isParked = row.getValue("isParked") as boolean
       return (
         <div className={`font-medium ${isParked ? "text-green-600" : "text-red-600"}`}>
-          {isParked ? "Parked" : "Not Parked"}
+          {isParked ? "Currently Parked" : "Not Parked"}
         </div>
       )
     },
@@ -63,8 +63,13 @@ export const columns: ColumnDef<Vehicle>[] = [
     accessorKey: "parkingSlotId",
     header: "Parking Slot",
     cell: ({ row }) => {
-      const parkingSlotId = row.getValue("parkingSlotId") as string
-      return <div>{parkingSlotId || "Not Assigned"}</div>
+      const parkingSlotNumber = row.original.parkingSlotNumber
+      const isParked = row.original.isParked
+      return (
+        <div className={`font-medium ${isParked ? "text-green-600" : "text-muted-foreground"}`}>
+          {isParked ? `Slot ${parkingSlotNumber}` : "No Active Slot"}
+        </div>
+      )
     },
   },
   {

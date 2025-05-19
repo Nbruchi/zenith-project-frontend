@@ -21,7 +21,7 @@ export const handleApiResponse = (response: any) => {
 // Request interceptor
 axiosInstance.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -43,8 +43,8 @@ axiosInstance.interceptors.response.use(
             const currentPath = window.location.pathname;
             // Only remove token and redirect if we're not in a protected route
             if (!currentPath.startsWith('/dashboard') && !currentPath.includes('/login')) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
+                sessionStorage.removeItem("token");
+                sessionStorage.removeItem("user");
                 window.location.href = "/login";
             }
         }

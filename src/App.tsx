@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import UserManagement from "./pages/UserManagement";
 
 // Pages
 import Index from "./pages/Index";
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="requests" element={<Requests />} />
               <Route path="manage-slots" element={<ManageSlots />} />
               <Route path="profile" element={<ProfilePage />} />
+            <Route path="manage-users" element={<UserManagement />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

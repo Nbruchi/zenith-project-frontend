@@ -30,7 +30,7 @@ export function useUsers(page = 1, limit = 10, search = "") {
 
   const updateProfile = useMutation({
     mutationFn: async (profileData: UpdateProfileDto) => {
-      const response = await axiosInstance.patch('/users/profile', profileData);
+      const response = await axiosInstance.put('/users/profile', profileData);
       return handleApiResponse(response);
     },
     onSuccess: (data) => {
@@ -44,7 +44,7 @@ export function useUsers(page = 1, limit = 10, search = "") {
 
   const updatePassword = useMutation({
     mutationFn: async (passwordData: UpdatePasswordDto) => {
-      const response = await axiosInstance.patch('/users/password', passwordData);
+      const response = await axiosInstance.put('/users/password', passwordData);
       return handleApiResponse(response);
     },
     onSuccess: () => {

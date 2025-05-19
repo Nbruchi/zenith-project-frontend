@@ -15,6 +15,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useParkingSlots } from "@/hooks/useParkingSlots";
 
 const Requests = () => {
   const [page, setPage] = useState(1);
@@ -30,6 +41,8 @@ const Requests = () => {
     status === "ALL" ? undefined : status
   );
 
+  const { slots } = useParkingSlots();
+
   const handleSearch = (query: string) => {
     setSearch(query);
     setPage(1);
@@ -44,21 +57,42 @@ const Requests = () => {
     navigate("/dashboard/vehicles");
   };
 
-  const handleApprove = async (requestId: string) => {
+  const handleApprove = async (id: string) => {
     try {
-      await approveSlotRequest.mutateAsync({ id: requestId });
+      // Find an available slot
+      const availableSlot = slots.find(slot => slot.status === "AVAILABLE");
+      
+      if (!availableSlot) {
+        toast.error("No available slots found");
+        return;
+      }
+
+      await approveSlotRequest.mutateAsync({ 
+        id, 
+        slotId: availableSlot.id 
+      });
+      toast.success("Slot request approved successfully");
     } catch (error) {
       // Error is handled in the mutation
     }
   };
 
-  const handleReject = async (requestId: string) => {
+  const handleReject = async (id: string, rejectionReason: string) => {
     try {
-      await rejectSlotRequest.mutateAsync({ id: requestId, rejectionReason: "Rejected by admin" });
+      await rejectSlotRequest.mutateAsync({ id, rejectionReason });
+      toast.success("Slot request rejected successfully");
     } catch (error) {
       // Error is handled in the mutation
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto">
@@ -98,11 +132,7 @@ const Requests = () => {
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <p>Loading requests...</p>
-        </div>
-      ) : requests.length > 0 ? (
+      {requests.length > 0 ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
             {requests.map((request) => (
@@ -119,11 +149,36 @@ const Requests = () => {
               <div className="text-sm text-muted-foreground">
                 Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} requests
               </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={pagination.totalPages}
-                onPageChange={setPage}
-              />
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => (
+                      <PaginationItem key={pageNum}>
+                        <PaginationLink
+                          onClick={() => setPage(pageNum)}
+                          isActive={page === pageNum}
+                        >
+                          {pageNum}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        setPage((p) => Math.min(pagination.totalPages, p + 1))
+                      }
+                      disabled={page === pagination.totalPages}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           )}
         </>
