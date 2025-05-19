@@ -1,5 +1,3 @@
-
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -21,11 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { createBulkParkingSlots, fetchParkingSlots } from "@/store/slices/parkingSlotsSlice";
 import { BulkSlotCreationFormData, VehicleSize, VehicleType } from "@/types";
-import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useParkingSlots } from "@/hooks/useParkingSlots";
 
 const formSchema = z.object({
   startNumber: z.coerce.number().min(1, "Start number must be at least 1"),
@@ -33,7 +29,7 @@ const formSchema = z.object({
   size: z.enum(["small", "medium", "large"] as const),
   vehicleType: z.enum(["car", "motorcycle", "truck"] as const),
   location: z.enum(["north", "south", "east", "west"] as const),
-});
+}) as z.ZodType<BulkSlotCreationFormData>;
 
 interface BulkSlotFormProps {
   isOpen: boolean;
@@ -44,8 +40,7 @@ const BulkSlotForm = ({
   isOpen,
   onClose,
 }: BulkSlotFormProps) => {
-  const dispatch = useAppDispatch();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createBulkSlots } = useParkingSlots();
 
   const form = useForm<BulkSlotCreationFormData>({
     resolver: zodResolver(formSchema),
@@ -60,16 +55,10 @@ const BulkSlotForm = ({
 
   const onSubmit = async (data: BulkSlotCreationFormData) => {
     try {
-      setIsSubmitting(true);
-      await dispatch(createBulkParkingSlots(data)).unwrap();
-      // Refresh the slot list
-      dispatch(fetchParkingSlots({ page: 1, limit: 10 }));
+      await createBulkSlots.mutateAsync(data);
       onClose();
-      toast.success(`Successfully created ${data.count} parking slots`);
-    } catch (error: any) {
-      toast.error(error || "Failed to create bulk parking slots");
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
@@ -193,10 +182,11 @@ const BulkSlotForm = ({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? "Creating..."
-                  : "Create Slots"}
+              <Button 
+                type="submit" 
+                disabled={createBulkSlots.isPending}
+              >
+                {createBulkSlots.isPending ? "Creating..." : "Create Slots"}
               </Button>
             </div>
           </form>

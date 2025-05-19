@@ -1,16 +1,13 @@
-
 import { Button } from "@/components/ui/button";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { logout } from "@/store/slices/authSlice";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const DashboardHeader = () => {
-  const dispatch = useAppDispatch();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { user } = useAppSelector((state) => state.auth);
 
   const handleLogout = () => {
-    dispatch(logout());
+    logout();
     navigate("/login");
   };
 

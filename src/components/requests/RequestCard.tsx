@@ -1,10 +1,7 @@
-
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SlotRequest } from "@/types";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { deleteSlotRequest, approveSlotRequest, rejectSlotRequest } from "@/store/slices/slotRequestsSlice";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -17,51 +14,44 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useSlotRequests } from "@/hooks/useSlotRequests";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface RequestCardProps {
   request: SlotRequest;
 }
 
 const RequestCard = ({ request }: RequestCardProps) => {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.role === "admin";
+  const { user } = useAuth();
+  const { deleteRequest, approveRequest, rejectRequest } = useSlotRequests();
+  const isAdmin = user?.role === "ADMIN";
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const vehicle = request.vehicle;
 
   const handleDelete = async () => {
     try {
-      await dispatch(deleteSlotRequest(request.id)).unwrap();
-      toast.success("Request deleted successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to delete request");
+      await deleteRequest.mutateAsync(request.id);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
   const handleApprove = async () => {
     try {
-      setIsProcessing(true);
-      await dispatch(approveSlotRequest(request.id)).unwrap();
-      toast.success("Request approved successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to approve request");
-    } finally {
-      setIsProcessing(false);
+      await approveRequest.mutateAsync(request.id);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
   const handleReject = async () => {
     try {
-      setIsProcessing(true);
-      await dispatch(rejectSlotRequest(request.id)).unwrap();
-      toast.success("Request rejected successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to reject request");
-    } finally {
-      setIsProcessing(false);
+      await rejectRequest.mutateAsync(request.id);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
@@ -139,18 +129,18 @@ const RequestCard = ({ request }: RequestCardProps) => {
                       size="sm"
                       className="w-full"
                       onClick={handleApprove}
-                      disabled={isProcessing}
+                      disabled={approveRequest.isPending}
                     >
-                      {isProcessing ? "Processing..." : "Approve"}
+                      {approveRequest.isPending ? "Processing..." : "Approve"}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       className="w-full"
                       onClick={handleReject}
-                      disabled={isProcessing}
+                      disabled={rejectRequest.isPending}
                     >
-                      {isProcessing ? "Processing..." : "Reject"}
+                      {rejectRequest.isPending ? "Processing..." : "Reject"}
                     </Button>
                   </div>
                 ) : (
@@ -158,6 +148,7 @@ const RequestCard = ({ request }: RequestCardProps) => {
                     variant="destructive"
                     size="sm"
                     onClick={() => setShowDeleteConfirm(true)}
+                    disabled={deleteRequest.isPending}
                   >
                     Cancel Request
                   </Button>

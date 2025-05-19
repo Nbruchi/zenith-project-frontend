@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,19 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { createVehicle, updateVehicle, fetchVehicles } from "@/store/slices/vehiclesSlice";
 import { Vehicle, VehicleFormData, VehicleSize, VehicleType } from "@/types";
-import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useVehicles } from "@/hooks/useVehicles";
 
 const formSchema = z.object({
   plateNumber: z.string().min(3, "Plate number must be at least 3 characters"),
-  vehicleType: z.enum(["car", "motorcycle", "truck"] as const),
-  size: z.enum(["small", "medium", "large"] as const),
+  vehicleType: z.enum(["CAR", "MOTORCYCLE", "TRUCK"] as const),
+  size: z.enum(["SMALL", "MEDIUM", "LARGE"] as const),
   color: z.string().optional(),
   model: z.string().optional(),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 interface VehicleFormProps {
   isOpen: boolean;
@@ -47,35 +46,46 @@ const VehicleForm = ({
   vehicle,
   isEditing = false,
 }: VehicleFormProps) => {
-  const dispatch = useAppDispatch();
+  const { createVehicle, updateVehicle } = useVehicles();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<VehicleFormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       plateNumber: vehicle?.plateNumber || "",
-      vehicleType: (vehicle?.vehicleType as VehicleType) || "car",
-      size: (vehicle?.size as VehicleSize) || "small",
+      vehicleType: (vehicle?.vehicleType as VehicleType) || "CAR",
+      size: (vehicle?.size as VehicleSize) || "SMALL",
       color: vehicle?.attributes?.color || "",
       model: vehicle?.attributes?.model || "",
     },
   });
 
-  const onSubmit = async (data: VehicleFormData) => {
+  const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
       if (isEditing && vehicle) {
-        await dispatch(
-          updateVehicle({ id: vehicle.id, vehicleData: data })
-        ).unwrap();
+        await updateVehicle.mutateAsync({ 
+          id: vehicle.id, 
+          vehicleData: {
+            plateNumber: data.plateNumber,
+            vehicleType: data.vehicleType,
+            size: data.size,
+            color: data.color,
+            model: data.model
+          }
+        });
       } else {
-        await dispatch(createVehicle(data)).unwrap();
-        // Refresh the vehicle list
-        dispatch(fetchVehicles({ page: 1, limit: 10 }));
+        await createVehicle.mutateAsync({
+          plateNumber: data.plateNumber,
+          vehicleType: data.vehicleType,
+          size: data.size,
+          color: data.color,
+          model: data.model
+        });
       }
       onClose();
-    } catch (error: any) {
-      toast.error(error || "Failed to save vehicle");
+    } catch (error) {
+      console.error("Error submitting form:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -83,14 +93,14 @@ const VehicleForm = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Update Vehicle" : "Add New Vehicle"}
+            {isEditing ? "Edit Vehicle" : "Add New Vehicle"}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="plateNumber"
@@ -120,9 +130,9 @@ const VehicleForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="car">Car</SelectItem>
-                      <SelectItem value="motorcycle">Motorcycle</SelectItem>
-                      <SelectItem value="truck">Truck</SelectItem>
+                      <SelectItem value="CAR">Car</SelectItem>
+                      <SelectItem value="MOTORCYCLE">Motorcycle</SelectItem>
+                      <SelectItem value="TRUCK">Truck</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -145,9 +155,9 @@ const VehicleForm = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="small">Small</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="large">Large</SelectItem>
+                      <SelectItem value="SMALL">Small</SelectItem>
+                      <SelectItem value="MEDIUM">Medium</SelectItem>
+                      <SelectItem value="LARGE">Large</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -181,14 +191,17 @@ const VehicleForm = ({
               )}
             />
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting
-                  ? isEditing
-                    ? "Updating..."
-                    : "Creating..."
+                  ? "Saving..."
                   : isEditing
                   ? "Update Vehicle"
                   : "Add Vehicle"}

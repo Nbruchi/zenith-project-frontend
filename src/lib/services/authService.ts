@@ -9,7 +9,7 @@ export const authService = {
      */
     login: async (credentials: LoginFormData) => {
         const response = await axiosInstance.post("/auth/login", credentials);
-        return response.data;
+        return response.data.data;
     },
 
     /**
@@ -27,7 +27,7 @@ export const authService = {
      * @returns The current user
      */
     getCurrentUser: async () => {
-        const response = await axiosInstance.get("/user/me");
+        const response = await axiosInstance.get("/auth/me");
         return response.data;
     },
 

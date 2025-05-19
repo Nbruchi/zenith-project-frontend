@@ -1,7 +1,6 @@
-
 import { cn } from "@/lib/utils";
 import { NavLink } from "react-router-dom";
-import { useAppSelector } from "@/hooks/useAppDispatch";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Car,
   Calendar,
@@ -13,8 +12,8 @@ import {
 type SidebarProps = React.HTMLAttributes<HTMLDivElement>
 
 const Sidebar = ({ className }: SidebarProps) => {
-  const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.role === "admin";
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   return (
     <div className={cn("pb-12 bg-sidebar border-r min-h-screen", className)}>

@@ -3,8 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { RegisterFormData } from "@/types";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { register as registerUser } from "@/store/slices/authSlice";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -12,6 +10,7 @@ import { toast } from "sonner";
 import {Eye, EyeOff} from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -24,16 +23,16 @@ const formSchema = z.object({
 });
 
 const RegisterForm = () => {
-   const dispatch = useAppDispatch();
-   const navigate = useNavigate();
-   const [isLoading, setIsLoading] = useState(false);
-   const [showPassword, setShowPassword] = useState(false);
-   const [showConfirm, setShowConfirm] = useState(false);
+  const navigate = useNavigate();
+  const { register: registerUser, isLoading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-   const toggleShowPassword = () => setShowPassword(!showPassword);
-   const toggleShowConfirm = () => setShowConfirm(!showConfirm);
+  const toggleShowPassword = () => setShowPassword(!showPassword);
+  const toggleShowConfirm = () => setShowConfirm(!showConfirm);
 
-   const form = useForm<RegisterFormData>({resolver: zodResolver(formSchema),
+  const form = useForm<RegisterFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -44,13 +43,10 @@ const RegisterForm = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      setIsLoading(true);
-      await dispatch(registerUser(data)).unwrap();
+      await registerUser(data);
       navigate("/dashboard");
     } catch (error: any) {
-      toast.error(error || "Registration failed");
-    } finally {
-      setIsLoading(false);
+      toast.error(error?.message || "Registration failed");
     }
   };
 

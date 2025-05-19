@@ -59,14 +59,21 @@ export const vehicleService = {
    * @returns The created vehicle
    */
   createVehicle: async (vehicleData: {
-    vehiclePlateNumber: string;
+    plateNumber: string;
     vehicleType: string;
-    vehicleColor: string;
-    vehicleBrand: string;
-    vehicleModel: string;
-    vehicleYear: string;
+    size: string;
+    color?: string;
+    model?: string;
   }) => {
-    const response = await axiosInstance.post('/vehicles/', vehicleData);
+    const response = await axiosInstance.post('/vehicles/', {
+      plateNumber: vehicleData.plateNumber,
+      vehicleType: vehicleData.vehicleType.toUpperCase(),
+      size: vehicleData.size.toUpperCase(),
+      attributes: {
+        color: vehicleData.color,
+        model: vehicleData.model
+      }
+    });
     return response.data;
   },
 

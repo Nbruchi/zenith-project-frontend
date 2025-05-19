@@ -1,12 +1,10 @@
-
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ParkingSlot } from "@/types";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { deleteParkingSlot } from "@/store/slices/parkingSlotsSlice";
 import { useState } from "react";
-import { toast } from "sonner";
+import { useParkingSlots } from "@/hooks/useParkingSlots";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,18 +22,17 @@ interface SlotCardProps {
 }
 
 const SlotCard = ({ slot, onEdit }: SlotCardProps) => {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.role === "admin";
+  const { user } = useAuth();
+  const { deleteSlot } = useParkingSlots();
+  const isAdmin = user?.role === "ADMIN";
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleDelete = async () => {
     try {
-      await dispatch(deleteParkingSlot(slot.id)).unwrap();
-      toast.success("Parking slot deleted successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to delete parking slot");
+      await deleteSlot.mutateAsync(slot.id);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
@@ -108,8 +105,13 @@ const SlotCard = ({ slot, onEdit }: SlotCardProps) => {
               <Button variant="outline" size="sm" onClick={() => onEdit(slot)}>
                 Edit
               </Button>
-              <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-                Delete
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={deleteSlot.isPending}
+              >
+                {deleteSlot.isPending ? "Deleting..." : "Delete"}
               </Button>
             </div>
           </CardFooter>

@@ -1,10 +1,9 @@
-
 // Auth types
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'USER' | 'ADMIN';
 }
 
 export interface AuthState {
@@ -16,8 +15,8 @@ export interface AuthState {
 }
 
 // Vehicle types
-export type VehicleSize = 'small' | 'medium' | 'large';
-export type VehicleType = 'car' | 'motorcycle' | 'truck';
+export type VehicleSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+export type VehicleType = 'CAR' | 'MOTORCYCLE' | 'TRUCK';
 
 export interface Vehicle {
   id: string;
@@ -45,8 +44,8 @@ export interface ParkingSlot {
   slotNumber: string;
   size: VehicleSize;
   vehicleType: VehicleType;
-  status: 'available' | 'unavailable';
-  location: 'north' | 'south' | 'east' | 'west';
+  status: 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'MAINTENANCE';
+  location: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 }
 
 export interface ParkingSlotsState {
@@ -57,7 +56,7 @@ export interface ParkingSlotsState {
 }
 
 // Slot request types
-export type RequestStatus = 'pending' | 'approved' | 'rejected';
+export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface SlotRequest {
   id: string;
@@ -135,7 +134,7 @@ export interface SlotFormData {
   slotNumber: string;
   size: VehicleSize;
   vehicleType: VehicleType;
-  location: 'north' | 'south' | 'east' | 'west';
+  location: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 }
 
 export interface SlotRequestFormData {
@@ -147,5 +146,5 @@ export interface BulkSlotCreationFormData {
   count: number;
   size: VehicleSize;
   vehicleType: VehicleType;
-  location: 'north' | 'south' | 'east' | 'west';
+  location: 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
 }

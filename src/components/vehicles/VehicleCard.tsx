@@ -1,11 +1,7 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Vehicle } from "@/types";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { deleteVehicle } from "@/store/slices/vehiclesSlice";
-import { createSlotRequest } from "@/store/slices/slotRequestsSlice";
+import { Vehicle, VehicleSize, VehicleType } from "@/types";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -18,6 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Edit, Trash2 } from "lucide-react";
+import { useVehicles } from "@/hooks/useVehicles";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -25,54 +23,53 @@ interface VehicleCardProps {
 }
 
 const VehicleCard = ({ vehicle, onEdit }: VehicleCardProps) => {
-  const dispatch = useAppDispatch();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRequestingSlot, setIsRequestingSlot] = useState(false);
+  const { deleteVehicle, createSlotRequest } = useVehicles();
 
   const handleDelete = async () => {
     try {
-      await dispatch(deleteVehicle(vehicle.id)).unwrap();
-      toast.success("Vehicle deleted successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to delete vehicle");
+      await deleteVehicle.mutateAsync(vehicle.id);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
   const handleRequestSlot = async () => {
     try {
       setIsRequestingSlot(true);
-      await dispatch(createSlotRequest({ vehicleId: vehicle.id })).unwrap();
-      toast.success("Slot request submitted successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to request parking slot");
+      await createSlotRequest.mutateAsync(vehicle.id);
+    } catch (error) {
+      // Error is handled in the mutation
     } finally {
       setIsRequestingSlot(false);
     }
   };
 
-  const getSizeColor = (size: string) => {
+  const getSizeColor = (size: VehicleSize) => {
     switch (size) {
-      case "small":
-        return "bg-green-100 text-green-800";
-      case "medium":
-        return "bg-blue-100 text-blue-800";
-      case "large":
-        return "bg-purple-100 text-purple-800";
+      case 'SMALL':
+        return 'bg-blue-100 text-blue-800';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'LARGE':
+        return 'bg-red-100 text-red-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: VehicleType) => {
     switch (type) {
-      case "car":
-        return "bg-amber-100 text-amber-800";
-      case "motorcycle":
-        return "bg-cyan-100 text-cyan-800";
-      case "truck":
-        return "bg-red-100 text-red-800";
+      case 'CAR':
+        return 'bg-green-100 text-green-800';
+      case 'MOTORCYCLE':
+        return 'bg-purple-100 text-purple-800';
+      case 'TRUCK':
+        return 'bg-orange-100 text-orange-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -82,9 +79,13 @@ const VehicleCard = ({ vehicle, onEdit }: VehicleCardProps) => {
         <CardHeader>
           <div className="flex justify-between items-start">
             <CardTitle className="text-xl">{vehicle.plateNumber}</CardTitle>
-            <div className="flex space-x-1">
-              <Badge className={getSizeColor(vehicle.size)}>{vehicle.size}</Badge>
-              <Badge className={getTypeColor(vehicle.vehicleType)}>{vehicle.vehicleType}</Badge>
+            <div className="flex space-x-2">
+              <Badge className={getSizeColor(vehicle.size)}>
+                {vehicle.size.charAt(0) + vehicle.size.slice(1).toLowerCase()}
+              </Badge>
+              <Badge className={getTypeColor(vehicle.vehicleType)}>
+                {vehicle.vehicleType.charAt(0) + vehicle.vehicleType.slice(1).toLowerCase()}
+              </Badge>
             </div>
           </div>
           <CardDescription>Vehicle Details</CardDescription>
@@ -107,14 +108,27 @@ const VehicleCard = ({ vehicle, onEdit }: VehicleCardProps) => {
         </CardContent>
         <CardFooter className="flex justify-between border-t pt-4">
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={() => onEdit(vehicle)}>
-              Edit
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(vehicle)}
+            >
+              <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
-              Delete
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={deleteVehicle.isPending}
+            >
+              <Trash2 className="h-4 w-4" />
             </Button>
           </div>
-          <Button size="sm" onClick={handleRequestSlot} disabled={isRequestingSlot}>
+          <Button 
+            size="sm" 
+            onClick={handleRequestSlot} 
+            disabled={isRequestingSlot || createSlotRequest.isPending}
+          >
             {isRequestingSlot ? "Requesting..." : "Request Slot"}
           </Button>
         </CardFooter>

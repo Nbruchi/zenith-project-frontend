@@ -1,18 +1,16 @@
-
 import { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchVehicles } from "@/store/slices/vehiclesSlice";
-import { fetchSlotRequests } from "@/store/slices/slotRequestsSlice";
-import { fetchParkingSlots } from "@/store/slices/parkingSlotsSlice";
+import { useAuth } from "@/contexts/AuthContext";
+import { useVehicles } from "@/hooks/useVehicles";
+import { useParkingSlots } from "@/hooks/useParkingSlots";
+import { useSlotRequests } from "@/hooks/useSlotRequests";
 
 const Dashboard = () => {
-  const dispatch = useAppDispatch();
-  const { vehicles } = useAppSelector((state) => state.vehicles);
-  const { slots } = useAppSelector((state) => state.parkingSlots);
-  const { requests } = useAppSelector((state) => state.slotRequests);
-  const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.role === "admin";
+  const { user } = useAuth();
+  const { vehicles } = useVehicles(1, 100);
+  const { slots } = useParkingSlots(1, 100);
+  const { requests } = useSlotRequests(1, 100);
+  const isAdmin = user?.role === 'ADMIN';
 
   const [stats, setStats] = useState({
     totalVehicles: 0,
@@ -22,17 +20,11 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    dispatch(fetchVehicles({ page: 1, limit: 1000 }));
-    dispatch(fetchSlotRequests({ page: 1, limit: 1000 }));
-    dispatch(fetchParkingSlots({ page: 1, limit: 1000 }));
-  }, [dispatch]);
-
-  useEffect(() => {
     setStats({
       totalVehicles: vehicles.length,
       totalSlots: slots.length,
-      availableSlots: slots.filter((slot) => slot.status === "available").length,
-      pendingRequests: requests.filter((req) => req.requestStatus === "pending").length,
+      availableSlots: slots.filter((slot) => slot.status === "AVAILABLE").length,
+      pendingRequests: requests.filter((req) => req.requestStatus === "PENDING").length,
     });
   }, [vehicles, slots, requests]);
 

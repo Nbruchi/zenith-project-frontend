@@ -1,33 +1,20 @@
-
-import { useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { fetchSlotRequests, setSearchQuery, setCurrentPage } from "@/store/slices/slotRequestsSlice";
+import { useState } from "react";
 import RequestCard from "@/components/requests/RequestCard";
 import SearchInput from "@/components/SearchInput";
 import PaginationControls from "@/components/PaginationControls";
 import { Calendar } from "lucide-react";
+import { useSlotRequests } from "@/hooks/useSlotRequests";
 
 const Requests = () => {
-  const dispatch = useAppDispatch();
-  const { requests, isLoading, pagination } = useAppSelector((state) => state.slotRequests);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const limit = 10;
 
-  useEffect(() => {
-    dispatch(
-      fetchSlotRequests({
-        page: pagination.currentPage,
-        limit: pagination.itemsPerPage,
-        search: pagination.searchQuery,
-      })
-    );
-  }, [dispatch, pagination.currentPage, pagination.searchQuery]);
+  const { requests, pagination, isLoading } = useSlotRequests(page, limit, search);
 
   const handleSearch = (query: string) => {
-    dispatch(setSearchQuery(query));
-    dispatch(setCurrentPage(1));
-  };
-
-  const handlePageChange = (page: number) => {
-    dispatch(setCurrentPage(page));
+    setSearch(query);
+    setPage(1);
   };
 
   return (
@@ -43,7 +30,7 @@ const Requests = () => {
         <SearchInput
           placeholder="Search by status or vehicle"
           onSearch={handleSearch}
-          defaultValue={pagination.searchQuery}
+          defaultValue={search}
         />
       </div>
 
@@ -59,9 +46,9 @@ const Requests = () => {
             ))}
           </div>
           <PaginationControls
-            currentPage={pagination.currentPage}
+            currentPage={page}
             totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
+            onPageChange={setPage}
           />
         </>
       ) : (
@@ -69,11 +56,11 @@ const Requests = () => {
           <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">No requests found</h3>
           <p className="text-muted-foreground mt-2 mb-4">
-            {pagination.searchQuery
+            {search
               ? "No results match your search. Try with a different term."
               : "You haven't made any parking slot requests yet."}
           </p>
-          {!pagination.searchQuery && (
+          {!search && (
             <p>
               Go to your vehicles and click "Request Slot" to request a parking
               slot.

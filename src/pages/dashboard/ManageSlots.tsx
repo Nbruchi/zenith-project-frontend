@@ -1,7 +1,5 @@
-
-import { useEffect, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { fetchParkingSlots, setSearchQuery, setCurrentPage } from "@/store/slices/parkingSlotsSlice";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SlotCard from "@/components/parking-slots/SlotCard";
 import SlotForm from "@/components/parking-slots/SlotForm";
 import BulkSlotForm from "@/components/parking-slots/BulkSlotForm";
@@ -10,41 +8,32 @@ import PaginationControls from "@/components/PaginationControls";
 import { Button } from "@/components/ui/button";
 import { ParkingSlot } from "@/types";
 import { Settings, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useParkingSlots } from "@/hooks/useParkingSlots";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ManageSlots = () => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { slots, isLoading, pagination } = useAppSelector((state) => state.parkingSlots);
-  const { user } = useAppSelector((state) => state.auth);
-  const isAdmin = user?.role === "admin";
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
   const [editingSlot, setEditingSlot] = useState<ParkingSlot | undefined>(undefined);
+  const limit = 10;
+
+  const { slots, pagination, isLoading } = useParkingSlots(page, limit, search);
 
   useEffect(() => {
     if (!isAdmin) {
       navigate("/dashboard");
-      return;
     }
-
-    dispatch(
-      fetchParkingSlots({
-        page: pagination.currentPage,
-        limit: pagination.itemsPerPage,
-        search: pagination.searchQuery,
-      })
-    );
-  }, [dispatch, pagination.currentPage, pagination.searchQuery, isAdmin, navigate]);
+  }, [isAdmin, navigate]);
 
   const handleSearch = (query: string) => {
-    dispatch(setSearchQuery(query));
-    dispatch(setCurrentPage(1));
-  };
-
-  const handlePageChange = (page: number) => {
-    dispatch(setCurrentPage(page));
+    setSearch(query);
+    setPage(1);
   };
 
   const handleAddSlot = () => {
@@ -62,7 +51,7 @@ const ManageSlots = () => {
   };
 
   if (!isAdmin) {
-    return null; // Prevent rendering if not admin
+    return null;
   }
 
   return (
@@ -88,7 +77,7 @@ const ManageSlots = () => {
         <SearchInput
           placeholder="Search by slot number, size, or vehicle type"
           onSearch={handleSearch}
-          defaultValue={pagination.searchQuery}
+          defaultValue={search}
         />
       </div>
 
@@ -104,9 +93,9 @@ const ManageSlots = () => {
             ))}
           </div>
           <PaginationControls
-            currentPage={pagination.currentPage}
+            currentPage={page}
             totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
+            onPageChange={setPage}
           />
         </>
       ) : (
@@ -114,11 +103,11 @@ const ManageSlots = () => {
           <Settings className="h-12 w-12 mx-auto text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">No parking slots found</h3>
           <p className="text-muted-foreground mt-2 mb-4">
-            {pagination.searchQuery
+            {search
               ? "No results match your search. Try with a different term."
               : "No parking slots have been added yet."}
           </p>
-          {!pagination.searchQuery && (
+          {!search && (
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button onClick={handleAddBulkSlots}>Bulk Create Slots</Button>
               <Button variant="outline" onClick={handleAddSlot}>

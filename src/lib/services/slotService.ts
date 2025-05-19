@@ -21,9 +21,11 @@ export const slotService = {
     slotSize?: string,
     slotStatus?: string
   ) => {
-    const response = await axiosInstance.get('/slots/', {
-      params: { page, limit, search, slotSize, slotStatus },
-    });
+    const params: Record<string, string> = { page: String(page), limit: String(limit) };
+    if (search) params.search = search;
+    if (slotSize) params.slotSize = slotSize;
+    if (slotStatus) params.status = slotStatus;
+    const response = await axiosInstance.get('/parking-slots/', { params });
     return response.data;
   },
 
@@ -33,7 +35,7 @@ export const slotService = {
    * @returns The slot
    */
   getSlotById: async (id: string) => {
-    const response = await axiosInstance.get(`/slots/${id}`);
+    const response = await axiosInstance.get(`/parking-slots/${id}`);
     return response.data;
   },
 
@@ -43,7 +45,7 @@ export const slotService = {
    * @returns The created slot
    */
   createSlot: async (slotData: { slotSize: string }) => {
-    const response = await axiosInstance.post('/slots/', slotData);
+    const response = await axiosInstance.post('/parking-slots/', slotData);
     return response.data;
   },
 
@@ -53,7 +55,7 @@ export const slotService = {
    * @returns The created slots
    */
   createManySlots: async (slotData: { numberOfSlots: number; slotSize: string }) => {
-    const response = await axiosInstance.post('/slots/many', slotData);
+    const response = await axiosInstance.post('/parking-slots/many', slotData);
     return response.data;
   },
 
@@ -70,7 +72,7 @@ export const slotService = {
       slotStatus?: string;
     }
   ) => {
-    const response = await axiosInstance.patch(`/slots/${id}`, slotData);
+    const response = await axiosInstance.patch(`/parking-slots/${id}`, slotData);
     return response.data;
   },
 
@@ -80,7 +82,7 @@ export const slotService = {
    * @returns The response data
    */
   deleteSlot: async (id: string) => {
-    const response = await axiosInstance.delete(`/slots/${id}`);
+    const response = await axiosInstance.delete(`/parking-slots/${id}`);
     return response.data;
   },
 };

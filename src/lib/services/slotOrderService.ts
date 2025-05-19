@@ -11,7 +11,7 @@ export const slotOrderService = {
    * @returns The paginated slot orders
    */
   getSlotOrders: async (page: number = 1, limit: number = 10) => {
-    const response = await axiosInstance.get('/slot-orders/', {
+    const response = await axiosInstance.get('/slot-requests/', {
       params: { page, limit },
     });
     return response.data;
@@ -25,7 +25,7 @@ export const slotOrderService = {
    * @returns The paginated slot orders for the user
    */
   getUserSlotOrders: async (userId: string, page: number = 1, limit: number = 10) => {
-    const response = await axiosInstance.get(`/slot-orders/user/${userId}`, {
+    const response = await axiosInstance.get(`/slot-requests/user/${userId}`, {
       params: { page, limit },
     });
     return response.data;
@@ -37,7 +37,7 @@ export const slotOrderService = {
    * @returns The slot order
    */
   getSlotOrderById: async (id: string) => {
-    const response = await axiosInstance.get(`/slot-orders/${id}`);
+    const response = await axiosInstance.get(`/slot-requests/${id}`);
     return response.data;
   },
 
@@ -46,11 +46,8 @@ export const slotOrderService = {
    * @param orderData - The slot order data
    * @returns The created slot order
    */
-  createSlotOrder: async (orderData: {
-    slotId: string;
-    vehiclePlateNumber: string;
-  }) => {
-    const response = await axiosInstance.post('/slot-orders/', orderData);
+  createSlotOrder: async (orderData: { vehiclePlateNumber: string; slotId?: string; }) => {
+    const response = await axiosInstance.post('/slot-requests/', orderData);
     return response.data;
   },
 
@@ -61,7 +58,7 @@ export const slotOrderService = {
    * @returns The updated slot order
    */
   updateSlotOrderStatus: async (id: string, status: string) => {
-    const response = await axiosInstance.patch(`/slot-orders/${id}/status`, { status });
+    const response = await axiosInstance.patch(`/slot-requests/${id}/status`, { status });
     return response.data;
   },
 };

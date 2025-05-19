@@ -1,26 +1,18 @@
-
 import { useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "@/hooks/useAppDispatch";
-import { fetchCurrentUser } from "@/store/slices/authSlice";
+import { useAuth } from "@/contexts/AuthContext";
 import DashboardHeader from "./DashboardHeader";
 import Sidebar from "./Sidebar";
 
 const DashboardLayout = () => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
       navigate("/login");
-      return;
     }
-
-    if (isAuthenticated && !user) {
-      dispatch(fetchCurrentUser());
-    }
-  }, [isAuthenticated, user, isLoading, dispatch, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading || !user) {
     return (

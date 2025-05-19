@@ -1,5 +1,3 @@
-
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,18 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAppDispatch } from "@/hooks/useAppDispatch";
-import { createParkingSlot, updateParkingSlot, fetchParkingSlots } from "@/store/slices/parkingSlotsSlice";
 import { ParkingSlot, SlotFormData, VehicleSize, VehicleType } from "@/types";
-import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useParkingSlots } from "@/hooks/useParkingSlots";
 
 const formSchema = z.object({
   slotNumber: z.string().min(1, "Slot number is required"),
   size: z.enum(["small", "medium", "large"] as const),
   vehicleType: z.enum(["car", "motorcycle", "truck"] as const),
   location: z.enum(["north", "south", "east", "west"] as const),
-});
+}) as z.ZodType<SlotFormData>;
 
 interface SlotFormProps {
   isOpen: boolean;
@@ -46,36 +42,28 @@ const SlotForm = ({
   slot,
   isEditing = false,
 }: SlotFormProps) => {
-  const dispatch = useAppDispatch();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createSlot, updateSlot } = useParkingSlots();
 
   const form = useForm<SlotFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       slotNumber: slot?.slotNumber || "",
-      size: (slot?.size as VehicleSize) || "small",
-      vehicleType: (slot?.vehicleType as VehicleType) || "car",
-      location: slot?.location || "north",
+      size: (slot?.size.toLowerCase() as VehicleSize) || "small",
+      vehicleType: (slot?.vehicleType.toLowerCase() as VehicleType) || "car",
+      location: (slot?.location.toLowerCase() as "north" | "south" | "east" | "west") || "north",
     },
   });
 
   const onSubmit = async (data: SlotFormData) => {
     try {
-      setIsSubmitting(true);
       if (isEditing && slot) {
-        await dispatch(
-          updateParkingSlot({ id: slot.id, slotData: data })
-        ).unwrap();
+        await updateSlot.mutateAsync({ id: slot.id, slotData: data });
       } else {
-        await dispatch(createParkingSlot(data)).unwrap();
-        // Refresh the slot list
-        dispatch(fetchParkingSlots({ page: 1, limit: 10 }));
+        await createSlot.mutateAsync(data);
       }
       onClose();
-    } catch (error: any) {
-      toast.error(error || "Failed to save parking slot");
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      // Error is handled in the mutation
     }
   };
 
@@ -96,7 +84,7 @@ const SlotForm = ({
                 <FormItem>
                   <FormLabel>Slot Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter slot number" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -114,7 +102,7 @@ const SlotForm = ({
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select slot size" />
+                        <SelectValue placeholder="Select size" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -182,8 +170,11 @@ const SlotForm = ({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
+              <Button 
+                type="submit" 
+                disabled={createSlot.isPending || updateSlot.isPending}
+              >
+                {createSlot.isPending || updateSlot.isPending
                   ? isEditing
                     ? "Updating..."
                     : "Creating..."
