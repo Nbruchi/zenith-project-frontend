@@ -1,28 +1,32 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { SlotRequest, RequestStatus } from "@/types"
-import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { ColumnDef } from "@tanstack/react-table";
+import { SlotRequest, RequestStatus } from "@/types";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { format } from "date-fns"
+} from "@/components/ui/dropdown-menu";
+import { format } from "date-fns";
 
 interface ColumnProps {
-  onApprove?: (id: string) => Promise<void>
-  onReject?: (id: string, reason: string) => Promise<void>
-  onDelete?: (id: string) => Promise<void>
+  onApprove?: (id: string) => Promise<void>;
+  onReject?: (id: string, reason: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
-export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): ColumnDef<SlotRequest>[] => [
+export const createColumns = ({
+  onApprove,
+  onReject,
+  onDelete,
+}: ColumnProps): ColumnDef<SlotRequest>[] => [
   {
-    accessorKey: "vehicle.vehiclePlate",
+    accessorKey: "vehiclePlate",
     header: ({ column }) => {
       return (
         <Button
@@ -32,11 +36,11 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
           Vehicle Plate
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
   },
   {
-    accessorKey: "vehicle.vehicleType",
+    accessorKey: "vehicleType",
     header: ({ column }) => {
       return (
         <Button
@@ -46,10 +50,10 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
           Vehicle Type
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
-      const type = row.getValue("vehicle.vehicleType") as string
+      const type = row.getValue("vehicleType") as string;
       const getTypeColor = (type: string) => {
         switch (type) {
           case "CAR":
@@ -62,7 +66,7 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
             return "bg-gray-100 text-gray-800";
         }
       };
-      return <Badge className={getTypeColor(type)}>{type}</Badge>
+      return <Badge className={getTypeColor(type)}>{type}</Badge>;
     },
   },
   {
@@ -76,10 +80,10 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
           Status
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
-      const status = row.getValue("status") as RequestStatus
+      const status = row.getValue("status") as RequestStatus;
       const getStatusColor = (status: RequestStatus) => {
         switch (status) {
           case "PENDING":
@@ -92,7 +96,7 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
             return "bg-gray-100 text-gray-800";
         }
       };
-      return <Badge className={getStatusColor(status)}>{status}</Badge>
+      return <Badge className={getStatusColor(status)}>{status}</Badge>;
     },
   },
   {
@@ -106,34 +110,44 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
           Requested At
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
-      const date = row.getValue("requestedAt") as string
-      return <div>{format(new Date(date), "PPpp")}</div>
+      const date = row.getValue("requestedAt") as string;
+      try {
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+          return <div>-</div>;
+        }
+        return <div>{format(parsedDate, "PPpp")}</div>;
+      } catch (error) {
+        return <div>-</div>;
+      }
     },
   },
   {
     accessorKey: "assignedSlot",
     header: "Assigned Slot",
     cell: ({ row }) => {
-      const slot = row.getValue("assignedSlot") as { slotNumber: string } | null
-      return <div>{slot?.slotNumber || "Not assigned"}</div>
+      const slot = row.getValue("assignedSlot") as {
+        slotNumber: string;
+      } | null;
+      return <div>{slot?.slotNumber || "Not assigned"}</div>;
     },
   },
   {
     accessorKey: "rejectionReason",
     header: "Rejection Reason",
     cell: ({ row }) => {
-      const reason = row.getValue("rejectionReason") as string | null
-      return <div>{reason || "-"}</div>
+      const reason = row.getValue("rejectionReason") as string | null;
+      return <div>{reason || "-"}</div>;
     },
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const request = row.original
-      const isPending = request.status === "PENDING"
+      const request = row.original;
+      const isPending = request.status === "PENDING";
 
       return (
         <DropdownMenu>
@@ -162,7 +176,7 @@ export const createColumns = ({ onApprove, onReject, onDelete }: ColumnProps): C
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
