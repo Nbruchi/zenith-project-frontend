@@ -29,13 +29,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ChevronDown } from "lucide-react"
+import { SlotRequest } from "@/types"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
 }
 
-export function ParkingSlotsDataTable<TData, TValue>({
+export function SlotRequestsDataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
@@ -64,10 +65,10 @@ export function ParkingSlotsDataTable<TData, TValue>({
     <div>
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter by slot number..."
-          value={(table.getColumn("slotNumber")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter by vehicle plate..."
+          value={(table.getColumn("vehicle.vehiclePlate")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("slotNumber")?.setFilterValue(event.target.value)
+            table.getColumn("vehicle.vehiclePlate")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
