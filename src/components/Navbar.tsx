@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
-  const user = { role: 'ADMIN' }; // Replace with actual user data
+  const user = sessionStorage.getItem('user')
 
   return (
     <div>
